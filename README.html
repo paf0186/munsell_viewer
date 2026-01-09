@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Munsell 3D Visualizer - Instructions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #ffffff;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #a8b5ff;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #cccccc;
+        }
+
+        .file-list {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .file-item {
+            margin-bottom: 15px;
+        }
+
+        .file-name {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #88ff88;
+            font-size: 16px;
+        }
+
+        .file-desc {
+            color: #aaaaaa;
+            font-size: 14px;
+            margin-left: 20px;
+        }
+
+        .step {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .warning {
+            background: rgba(255, 165, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ff9500;
+            margin: 15px 0;
+        }
+
+        .warning-title {
+            color: #ffaa00;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .success {
+            background: rgba(76, 175, 80, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+            margin: 15px 0;
+        }
+
+        .success-title {
+            color: #66ff66;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ff0000;
+            margin: 15px 0;
+        }
+
+        .error-title {
+            color: #ff6666;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        code {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #88ff88;
+        }
+
+        .control-list {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .control-item {
+            margin-bottom: 10px;
+            padding-left: 20px;
+        }
+
+        .control-item::before {
+            content: "🎮 ";
+            margin-right: 5px;
+        }
+
+        ul {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            color: #cccccc;
+        }
+
+        .artifact-note {
+            background: rgba(118, 75, 162, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px dashed #764ba2;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .artifact-note-title {
+            color: #b8a4ff;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin: 10px 5px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Munsell 3D Color Space Visualizer</h1>
+        <p style="font-size: 18px; color: #aaaaaa; margin-bottom: 30px;">
+            Interactive 3D visualization of the Munsell color system
+        </p>
+
+        <div class="artifact-note">
+            <div class="artifact-note-title">📌 Viewing as an Artifact</div>
+            <p>If you're seeing this in Claude's chat interface, the visualizer HTML files should appear as interactive artifacts you can view directly in the chat!</p>
+            <p style="margin-top: 10px; font-size: 14px;">Look for the artifact viewer above this message, or ask Claude to show you the visualizer files.</p>
+        </div>
+
+        <h2>📁 Files in This Repository</h2>
+
+        <div class="file-list">
+            <div class="file-item">
+                <div class="file-name">munsell_visualizer_v2.html</div>
+                <div class="file-desc">✅ <strong>RECOMMENDED:</strong> Main visualizer with error handling and loading indicators</div>
+            </div>
+
+            <div class="file-item">
+                <div class="file-name">debug_check.html</div>
+                <div class="file-desc">🔧 Diagnostic tool - run this first if you have issues</div>
+            </div>
+
+            <div class="file-item">
+                <div class="file-name">munsell_visualizer.html</div>
+                <div class="file-desc">📄 Original version (simpler, but less error handling)</div>
+            </div>
+        </div>
+
+        <h2>🚀 Quick Start</h2>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Open the main visualizer file</strong>
+            <p style="margin-left: 40px; margin-top: 10px;">
+                Double-click <code>munsell_visualizer_v2.html</code> to open it in your default web browser
+                <br><em>OR</em><br>
+                Right-click → Open With → Choose your preferred browser (Chrome, Firefox, Safari, Edge)
+            </p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Wait for loading</strong>
+            <p style="margin-left: 40px; margin-top: 10px;">
+                You should see a loading spinner while Three.js downloads (2-3 seconds with internet)
+            </p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Interact with the visualization!</strong>
+            <p style="margin-left: 40px; margin-top: 10px;">
+                The 3D color space should appear with thousands of colorful points forming an irregular "tree" or "bulging cylinder" shape
+            </p>
+        </div>
+
+        <h2>🎮 Controls</h2>
+
+        <div class="control-list">
+            <div class="control-item">
+                <strong>Rotate:</strong> Click and drag anywhere on the canvas
+            </div>
+            <div class="control-item">
+                <strong>Zoom:</strong> Scroll wheel or pinch on trackpad
+            </div>
+            <div class="control-item">
+                <strong>Auto-Rotate:</strong> Click the "Auto Rotate" button for continuous rotation
+            </div>
+            <div class="control-item">
+                <strong>Point Size:</strong> Adjust slider to make points bigger or smaller
+            </div>
+            <div class="control-item">
+                <strong>Density:</strong> Low/Medium/High quality (more points = slower but prettier)
+            </div>
+            <div class="control-item">
+                <strong>Show Axes:</strong> Toggle the white vertical axis and circular guides
+            </div>
+            <div class="control-item">
+                <strong>Show Boundary:</strong> Toggle the semi-transparent surface mesh
+            </div>
+            <div class="control-item">
+                <strong>Reset View:</strong> Return camera to default position
+            </div>
+        </div>
+
+        <h2>✅ What You Should See</h2>
+
+        <div class="success">
+            <div class="success-title">Expected Appearance:</div>
+            <ul style="margin-top: 10px; margin-bottom: 0;">
+                <li>A 3D point cloud of thousands of colored dots</li>
+                <li>Dark gray/black background</li>
+                <li>Vertical white axis with small spheres marking values 0-10</li>
+                <li>Colorful semi-transparent boundary surface</li>
+                <li>The shape bulges out more on the yellow side, less on blue/purple</li>
+                <li>Gray circles at the base showing different chroma levels</li>
+                <li>Colored lines radiating from center showing hue directions</li>
+                <li>Point count at bottom (e.g., "Points: 2,185")</li>
+            </ul>
+        </div>
+
+        <h2>⚠️ Troubleshooting</h2>
+
+        <h3>Problem: UI shows but NO 3D visualization appears</h3>
+
+        <div class="warning">
+            <div class="warning-title">Solution 1: Check if Three.js loaded</div>
+            <ol>
+                <li>Open <code>debug_check.html</code> in your browser</li>
+                <li>Look for green ✓ checkmarks saying "THREE.js loaded successfully"</li>
+                <li>If you see red ✗ errors, continue to Solution 2</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <div class="warning-title">Solution 2: Check browser console</div>
+            <ol>
+                <li>Press <code>F12</code> (or <code>Cmd+Option+I</code> on Mac)</li>
+                <li>Click the "Console" tab</li>
+                <li>Look for error messages in red</li>
+            </ol>
+            <p style="margin-top: 10px;"><strong>Common errors:</strong></p>
+            <ul>
+                <li><code>THREE is not defined</code> → Internet connection issue or CDN blocked</li>
+                <li><code>CORS error</code> → Browser security restriction (see Solution 3)</li>
+                <li><code>WebGL context lost</code> → Graphics driver issue (update drivers)</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <div class="warning-title">Solution 3: Run a local web server</div>
+            <p>Some browsers have strict security when opening HTML files directly. Try:</p>
+
+            <p><strong>Option A - Python (if installed):</strong></p>
+            <code style="display: block; padding: 10px; margin: 10px 0;">
+                cd /path/to/munsell_viewer<br>
+                python -m http.server 8000<br>
+                # Then open: http://localhost:8000/munsell_visualizer_v2.html
+            </code>
+
+            <p><strong>Option B - Node.js (if installed):</strong></p>
+            <code style="display: block; padding: 10px; margin: 10px 0;">
+                npx http-server<br>
+                # Then open the URL it displays
+            </code>
+
+            <p><strong>Option C - VS Code:</strong></p>
+            <p style="margin-left: 20px;">Install "Live Server" extension, right-click the HTML file → "Open with Live Server"</p>
+        </div>
+
+        <h3>Problem: Very slow or laggy</h3>
+
+        <div class="warning">
+            <div class="warning-title">Solutions:</div>
+            <ul>
+                <li>Lower the "Point Density" slider to "Low"</li>
+                <li>Reduce "Point Size" slider</li>
+                <li>Turn off "Show Boundary Mesh"</li>
+                <li>Close other browser tabs</li>
+                <li>Try a different browser (Chrome/Edge usually have best WebGL performance)</li>
+            </ul>
+        </div>
+
+        <h3>Problem: Internet/CDN blocked</h3>
+
+        <div class="error">
+            <div class="error-title">Offline Version Available</div>
+            <p>If you can't access CDNs, ask Claude to create an offline version with Three.js embedded directly in the HTML file. It will be larger (~600KB) but won't need internet.</p>
+        </div>
+
+        <h2>🎨 Understanding the Munsell Space</h2>
+
+        <p>The irregular shape you see represents <strong>human color perception</strong>:</p>
+
+        <ul>
+            <li><strong>Value (height/Y-axis):</strong> Lightness from 0 (black) to 10 (white)</li>
+            <li><strong>Hue (angle):</strong> Color around the circle - Red → Yellow → Green → Blue → Purple</li>
+            <li><strong>Chroma (distance from center):</strong> Saturation/vividness - 0 at center (gray) to 18+ at edge</li>
+        </ul>
+
+        <div class="success">
+            <div class="success-title">Key Observations:</div>
+            <ul style="margin-top: 10px; margin-bottom: 0;">
+                <li>🟡 <strong>Yellow</strong> reaches the highest chroma (most saturated)</li>
+                <li>🔵 <strong>Blue</strong> has lower maximum chroma, especially at high values</li>
+                <li>🟣 <strong>Purple</strong> is very limited at high values (light purples are hard to saturate)</li>
+                <li>The "waist" around Value 5-6 is where most colors reach peak chroma</li>
+                <li>Very dark (Value 0-2) and very light (Value 9-10) colors have low chroma</li>
+            </ul>
+        </div>
+
+        <h2>🔗 Additional Resources</h2>
+
+        <p>To learn more about the Munsell color system:</p>
+        <ul>
+            <li>Munsell Color System - Wikipedia</li>
+            <li>Munsell Renotation Data (scientific color measurements)</li>
+            <li>Color science resources on CIE Lab and XYZ color spaces</li>
+        </ul>
+
+        <h2>💡 Tips for Best Experience</h2>
+
+        <ul>
+            <li>Use a large screen for better visualization</li>
+            <li>Try different browsers - Chrome and Edge usually have best WebGL support</li>
+            <li>Enable hardware acceleration in browser settings</li>
+            <li>Start with "Medium" density, increase to "High" if your computer can handle it</li>
+            <li>Use "Auto Rotate" to see the 3D shape from all angles</li>
+            <li>Turn off "Show Boundary" to see individual color points more clearly</li>
+        </ul>
+
+        <div style="text-align: center; margin-top: 40px; padding: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="color: #888888; font-size: 14px;">
+                Created with Three.js • Accurate color science conversion • Open source
+            </p>
+        </div>
+    </div>
+</body>
+</html>
