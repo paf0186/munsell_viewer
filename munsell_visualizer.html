@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Munsell Color Space 3D Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #info h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #info p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #cccccc;
+            margin-bottom: 8px;
+        }
+
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 250px;
+        }
+
+        #controls h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #ffffff;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            color: #aaaaaa;
+            margin-bottom: 5px;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .control-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .control-group .value-display {
+            font-size: 11px;
+            color: #888888;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #aaaaaa;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .gamut-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .srgb { background-color: #4CAF50; }
+        .p3 { background-color: #2196F3; }
+        .rec2020 { background-color: #9C27B0; }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+
+    <div id="info">
+        <h1>Munsell Color Space</h1>
+        <p><strong>Structure:</strong></p>
+        <p>• <strong>Value</strong> (Z-axis): 0-10 lightness</p>
+        <p>• <strong>Hue</strong> (angle): R→Y→G→B→P</p>
+        <p>• <strong>Chroma</strong> (radius): 0-18+ saturation</p>
+        <p><strong>Notice the irregular shape!</strong> The boundary shows which colors humans can actually perceive. Yellow reaches higher chroma than blue, and purples are limited at high values.</p>
+    </div>
+
+    <div id="controls">
+        <h3>Controls</h3>
+
+        <div class="control-group">
+            <label>Point Size</label>
+            <input type="range" id="pointSize" min="1" max="10" value="4" step="0.5">
+            <div class="value-display">Current: <span id="pointSizeValue">4</span></div>
+        </div>
+
+        <div class="control-group">
+            <label>Point Density</label>
+            <input type="range" id="density" min="1" max="3" value="2" step="1">
+            <div class="value-display">Current: <span id="densityValue">Medium</span></div>
+        </div>
+
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="showAxes" checked>
+                Show Axes
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="showBoundary" checked>
+                Show Boundary Mesh
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="showOutOfGamut">
+                Show Out-of-sRGB Gamut
+            </label>
+        </div>
+
+        <button id="resetCamera">Reset View</button>
+        <button id="toggleRotation">Auto Rotate</button>
+    </div>
+
+    <div id="status">
+        <span class="gamut-indicator srgb"></span> sRGB gamut
+        <span class="gamut-indicator p3"></span> Display P3
+        <span class="gamut-indicator rec2020"></span> Rec.2020
+        <br>
+        Points: <span id="pointCount">0</span>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+    <script>
+        // ===== MUNSELL COLOR SPACE DATA AND CONVERSION =====
+
+        /**
+         * Munsell color system data structure
+         * Based on the Munsell Renotation data
+         */
+        const MUNSELL_HUES = [
+            { name: '5R', angle: 0, color: '#FF0000' },
+            { name: '5YR', angle: 36, color: '#FF6600' },
+            { name: '5Y', angle: 72, color: '#FFFF00' },
+            { name: '5GY', angle: 108, color: '#99FF00' },
+            { name: '5G', angle: 144, color: '#00FF00' },
+            { name: '5BG', angle: 180, color: '#00FFAA' },
+            { name: '5B', angle: 216, color: '#0088FF' },
+            { name: '5PB', angle: 252, color: '#0000FF' },
+            { name: '5P', angle: 288, color: '#8800FF' },
+            { name: '5RP', angle: 324, color: '#FF00AA' }
+        ];
+
+        /**
+         * Maximum chroma values for different hue/value combinations
+         * This creates the irregular shape of the Munsell space
+         */
+        function getMaxChroma(hueAngle, value) {
+            // Normalize hue angle to 0-360
+            const h = ((hueAngle % 360) + 360) % 360;
+
+            // Different hues have different maximum chroma at different values
+            // Yellow and yellow-red have highest chroma
+            // Blue and purple have lower chroma, especially at high values
+
+            let baseChroma;
+
+            // Yellow region (60-100 degrees) - highest chroma
+            if (h >= 60 && h < 100) {
+                baseChroma = 16;
+            }
+            // Yellow-Red (20-60) and Yellow-Green (100-130) - high chroma
+            else if ((h >= 20 && h < 60) || (h >= 100 && h < 130)) {
+                baseChroma = 14;
+            }
+            // Red (0-20, 340-360) - medium-high chroma
+            else if (h < 20 || h >= 340) {
+                baseChroma = 14;
+            }
+            // Green (130-180) - medium chroma
+            else if (h >= 130 && h < 180) {
+                baseChroma = 12;
+            }
+            // Blue-Green to Blue (180-230) - lower chroma
+            else if (h >= 180 && h < 230) {
+                baseChroma = 10;
+            }
+            // Purple-Blue (230-260) - low chroma
+            else if (h >= 230 && h < 260) {
+                baseChroma = 9;
+            }
+            // Purple (260-300) - very low chroma at high values
+            else if (h >= 260 && h < 300) {
+                baseChroma = 10;
+            }
+            // Red-Purple (300-340) - medium chroma
+            else {
+                baseChroma = 12;
+            }
+
+            // Value affects maximum chroma - peak around value 5-6
+            let valueFactor;
+            if (value <= 1) {
+                valueFactor = 0.3;
+            } else if (value <= 2) {
+                valueFactor = 0.5;
+            } else if (value <= 3) {
+                valueFactor = 0.75;
+            } else if (value <= 5) {
+                valueFactor = 0.95;
+            } else if (value <= 6) {
+                valueFactor = 1.0; // Peak chroma
+            } else if (value <= 7) {
+                valueFactor = 0.9;
+            } else if (value <= 8) {
+                // Purple and blue suffer most at high values
+                if (h >= 230 && h < 300) {
+                    valueFactor = 0.5;
+                } else {
+                    valueFactor = 0.7;
+                }
+            } else if (value <= 9) {
+                if (h >= 230 && h < 300) {
+                    valueFactor = 0.25;
+                } else {
+                    valueFactor = 0.4;
+                }
+            } else {
+                valueFactor = 0.2;
+            }
+
+            return baseChroma * valueFactor;
+        }
+
+        /**
+         * Convert Munsell HVC to XYZ color space
+         * This is a simplified conversion based on the Munsell renotation
+         */
+        function munsellToXYZ(hue, value, chroma) {
+            // First convert to CIE Lab (Munsell is perceptually similar to Lab)
+            // L* correlates closely with Munsell Value
+            const L = value * 10; // Munsell Value 0-10 to L* 0-100
+
+            // Convert cylindrical Munsell (hue, chroma) to rectangular Lab (a*, b*)
+            const hueRadians = (hue * Math.PI) / 180;
+            const a = chroma * 5 * Math.cos(hueRadians); // Scale chroma
+            const b = chroma * 5 * Math.sin(hueRadians);
+
+            // Convert Lab to XYZ (D65 illuminant)
+            const fy = (L + 16) / 116;
+            const fx = fy + (a / 500);
+            const fz = fy - (b / 200);
+
+            const xr = fx > 0.206897 ? fx ** 3 : (fx - 16/116) / 7.787;
+            const yr = fy > 0.206897 ? fy ** 3 : (fy - 16/116) / 7.787;
+            const zr = fz > 0.206897 ? fz ** 3 : (fz - 16/116) / 7.787;
+
+            // D65 white point
+            const X = xr * 0.95047;
+            const Y = yr * 1.00000;
+            const Z = zr * 1.08883;
+
+            return { X, Y, Z };
+        }
+
+        /**
+         * Convert XYZ to linear RGB (sRGB primaries, D65)
+         */
+        function XYZToLinearRGB(X, Y, Z) {
+            const r =  3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z;
+            const g = -0.9692660 * X + 1.8760108 * Y + 0.0415560 * Z;
+            const b =  0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z;
+
+            return { r, g, b };
+        }
+
+        /**
+         * Apply sRGB gamma correction
+         */
+        function linearToSRGB(linear) {
+            if (linear <= 0.0031308) {
+                return 12.92 * linear;
+            } else {
+                return 1.055 * Math.pow(linear, 1/2.4) - 0.055;
+            }
+        }
+
+        /**
+         * Convert XYZ to sRGB with gamut check
+         */
+        function XYZToRGB(X, Y, Z) {
+            const linear = XYZToLinearRGB(X, Y, Z);
+
+            const r = linearToSRGB(linear.r);
+            const g = linearToSRGB(linear.g);
+            const b = linearToSRGB(linear.b);
+
+            // Check if color is in gamut
+            const inGamut = r >= 0 && r <= 1 && g >= 0 && g <= 1 && b >= 0 && b <= 1;
+
+            // Clamp to 0-1 for display
+            const rClamped = Math.max(0, Math.min(1, r));
+            const gClamped = Math.max(0, Math.min(1, g));
+            const bClamped = Math.max(0, Math.min(1, b));
+
+            return {
+                r: rClamped,
+                g: gClamped,
+                b: bClamped,
+                inGamut
+            };
+        }
+
+        /**
+         * Full Munsell to RGB conversion
+         */
+        function munsellToRGB(hue, value, chroma) {
+            const xyz = munsellToXYZ(hue, value, chroma);
+            return XYZToRGB(xyz.X, xyz.Y, xyz.Z);
+        }
+
+        // ===== THREE.JS SCENE SETUP =====
+
+        let scene, camera, renderer, controls;
+        let pointCloud, axes, boundaryMesh;
+        let autoRotate = false;
+
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+            scene.fog = new THREE.Fog(0x1a1a1a, 20, 50);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(
+                60,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(20, 15, 20);
+            camera.lookAt(0, 5, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            directionalLight.position.set(10, 10, 5);
+            scene.add(directionalLight);
+
+            // Simple orbit controls (manual implementation)
+            setupControls();
+
+            // Create visualization
+            createMunsellSpace();
+            createAxes();
+
+            // Event listeners
+            setupEventListeners();
+
+            // Start animation
+            animate();
+        }
+
+        /**
+         * Generate Munsell color space points
+         */
+        function createMunsellSpace(density = 2) {
+            // Remove existing point cloud
+            if (pointCloud) {
+                scene.remove(pointCloud);
+                pointCloud.geometry.dispose();
+                pointCloud.material.dispose();
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+
+            // Density determines number of samples
+            const valueStep = density === 1 ? 2 : (density === 2 ? 1 : 0.5);
+            const hueStep = density === 1 ? 36 : (density === 2 ? 18 : 9);
+            const chromaStep = density === 1 ? 2 : (density === 2 ? 1 : 0.5);
+
+            let pointCount = 0;
+
+            // Generate points in cylindrical Munsell space
+            for (let value = 0; value <= 10; value += valueStep) {
+                for (let hueAngle = 0; hueAngle < 360; hueAngle += hueStep) {
+                    const maxChroma = getMaxChroma(hueAngle, value);
+
+                    for (let chroma = 0; chroma <= maxChroma; chroma += chromaStep) {
+                        // Convert Munsell cylindrical to Cartesian
+                        const hueRadians = (hueAngle * Math.PI) / 180;
+                        const x = chroma * Math.cos(hueRadians);
+                        const y = value; // Value is height
+                        const z = chroma * Math.sin(hueRadians);
+
+                        positions.push(x, y, z);
+
+                        // Get RGB color
+                        const rgb = munsellToRGB(hueAngle, value, chroma);
+                        colors.push(rgb.r, rgb.g, rgb.b);
+
+                        pointCount++;
+                    }
+                }
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.4,
+                vertexColors: true,
+                sizeAttenuation: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+
+            pointCloud = new THREE.Points(geometry, material);
+            scene.add(pointCloud);
+
+            document.getElementById('pointCount').textContent = pointCount.toLocaleString();
+
+            // Create boundary mesh
+            createBoundaryMesh(density);
+        }
+
+        /**
+         * Create a mesh representing the boundary of the Munsell space
+         */
+        function createBoundaryMesh(density = 2) {
+            if (boundaryMesh) {
+                scene.remove(boundaryMesh);
+                boundaryMesh.geometry.dispose();
+                boundaryMesh.material.dispose();
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            const indices = [];
+
+            const valueStep = 1;
+            const hueStep = 18;
+
+            let vertexIndex = 0;
+            const vertexMap = new Map();
+
+            // Create vertices for each value level
+            for (let value = 0; value <= 10; value += valueStep) {
+                const vertices = [];
+
+                for (let hueAngle = 0; hueAngle <= 360; hueAngle += hueStep) {
+                    const maxChroma = getMaxChroma(hueAngle, value);
+                    const hueRadians = (hueAngle * Math.PI) / 180;
+
+                    const x = maxChroma * Math.cos(hueRadians);
+                    const y = value;
+                    const z = maxChroma * Math.sin(hueRadians);
+
+                    positions.push(x, y, z);
+
+                    const rgb = munsellToRGB(hueAngle, value, maxChroma);
+                    colors.push(rgb.r, rgb.g, rgb.b);
+
+                    vertices.push(vertexIndex);
+                    vertexIndex++;
+                }
+
+                vertexMap.set(value, vertices);
+            }
+
+            // Create faces between value levels
+            const values = Array.from(vertexMap.keys()).sort((a, b) => a - b);
+            for (let i = 0; i < values.length - 1; i++) {
+                const currentLevel = vertexMap.get(values[i]);
+                const nextLevel = vertexMap.get(values[i + 1]);
+
+                for (let j = 0; j < currentLevel.length - 1; j++) {
+                    const a = currentLevel[j];
+                    const b = currentLevel[j + 1];
+                    const c = nextLevel[j];
+                    const d = nextLevel[j + 1];
+
+                    // Two triangles per quad
+                    indices.push(a, c, b);
+                    indices.push(b, c, d);
+                }
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide,
+                shininess: 30
+            });
+
+            boundaryMesh = new THREE.Mesh(geometry, material);
+            scene.add(boundaryMesh);
+        }
+
+        /**
+         * Create axes with labels
+         */
+        function createAxes() {
+            axes = new THREE.Group();
+
+            // Helper function to create an axis
+            function createAxis(start, end, color, label) {
+                const points = [start, end];
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({ color });
+                const line = new THREE.Line(geometry, material);
+                axes.add(line);
+
+                // Add arrow
+                const direction = new THREE.Vector3().subVectors(end, start).normalize();
+                const arrow = new THREE.ArrowHelper(direction, start, start.distanceTo(end), color, 1, 0.5);
+                axes.add(arrow);
+            }
+
+            // Value axis (Z in Three.js = Y in our coordinate system)
+            createAxis(
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 12, 0),
+                0xffffff,
+                'Value'
+            );
+
+            // Add value markers
+            for (let v = 0; v <= 10; v += 2) {
+                const geometry = new THREE.SphereGeometry(0.15, 8, 8);
+                const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const marker = new THREE.Mesh(geometry, material);
+                marker.position.set(0, v, 0);
+                axes.add(marker);
+            }
+
+            // Hue/Chroma plane indicators
+            const hueCircles = [5, 10, 15];
+            hueCircles.forEach(radius => {
+                const curve = new THREE.EllipseCurve(
+                    0, 0,
+                    radius, radius,
+                    0, 2 * Math.PI,
+                    false,
+                    0
+                );
+                const points = curve.getPoints(50);
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({
+                    color: 0x444444,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const circle = new THREE.Line(geometry, material);
+                circle.rotation.x = Math.PI / 2;
+                axes.add(circle);
+            });
+
+            // Hue direction indicators
+            MUNSELL_HUES.forEach(hue => {
+                const angle = (hue.angle * Math.PI) / 180;
+                const radius = 18;
+                const x = radius * Math.cos(angle);
+                const z = radius * Math.sin(angle);
+
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(x, 0, z)
+                ]);
+                const material = new THREE.LineBasicMaterial({
+                    color: hue.color,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const line = new THREE.Line(geometry, material);
+                axes.add(line);
+            });
+
+            scene.add(axes);
+        }
+
+        /**
+         * Manual orbit controls
+         */
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let cameraRotation = { theta: Math.PI / 4, phi: Math.PI / 4 };
+        let cameraDistance = 30;
+
+        function setupControls() {
+            const container = renderer.domElement;
+
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+
+                    cameraRotation.theta -= deltaX * 0.01;
+                    cameraRotation.phi = Math.max(0.1, Math.min(Math.PI - 0.1,
+                                                   cameraRotation.phi + deltaY * 0.01));
+
+                    updateCameraPosition();
+
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                }
+            });
+
+            container.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraDistance = Math.max(10, Math.min(60, cameraDistance + e.deltaY * 0.05));
+                updateCameraPosition();
+            });
+
+            // Touch controls
+            let touchStart = null;
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            });
+
+            container.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && touchStart) {
+                    const deltaX = e.touches[0].clientX - touchStart.x;
+                    const deltaY = e.touches[0].clientY - touchStart.y;
+
+                    cameraRotation.theta -= deltaX * 0.01;
+                    cameraRotation.phi = Math.max(0.1, Math.min(Math.PI - 0.1,
+                                                   cameraRotation.phi + deltaY * 0.01));
+
+                    updateCameraPosition();
+
+                    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            });
+
+            container.addEventListener('touchend', () => {
+                touchStart = null;
+            });
+        }
+
+        function updateCameraPosition() {
+            const x = cameraDistance * Math.sin(cameraRotation.phi) * Math.cos(cameraRotation.theta);
+            const y = cameraDistance * Math.cos(cameraRotation.phi) + 5;
+            const z = cameraDistance * Math.sin(cameraRotation.phi) * Math.sin(cameraRotation.theta);
+
+            camera.position.set(x, y, z);
+            camera.lookAt(0, 5, 0);
+        }
+
+        /**
+         * Setup UI event listeners
+         */
+        function setupEventListeners() {
+            // Point size
+            document.getElementById('pointSize').addEventListener('input', (e) => {
+                const size = parseFloat(e.target.value);
+                if (pointCloud) {
+                    pointCloud.material.size = size * 0.1;
+                }
+                document.getElementById('pointSizeValue').textContent = size;
+            });
+
+            // Density
+            document.getElementById('density').addEventListener('input', (e) => {
+                const density = parseInt(e.target.value);
+                const labels = ['Low', 'Medium', 'High'];
+                document.getElementById('densityValue').textContent = labels[density - 1];
+                createMunsellSpace(density);
+            });
+
+            // Show axes
+            document.getElementById('showAxes').addEventListener('change', (e) => {
+                if (axes) {
+                    axes.visible = e.target.checked;
+                }
+            });
+
+            // Show boundary
+            document.getElementById('showBoundary').addEventListener('change', (e) => {
+                if (boundaryMesh) {
+                    boundaryMesh.visible = e.target.checked;
+                }
+            });
+
+            // Reset camera
+            document.getElementById('resetCamera').addEventListener('click', () => {
+                cameraRotation = { theta: Math.PI / 4, phi: Math.PI / 4 };
+                cameraDistance = 30;
+                updateCameraPosition();
+            });
+
+            // Toggle rotation
+            document.getElementById('toggleRotation').addEventListener('click', (e) => {
+                autoRotate = !autoRotate;
+                e.target.textContent = autoRotate ? 'Stop Rotation' : 'Auto Rotate';
+            });
+
+            // Window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        /**
+         * Animation loop
+         */
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (autoRotate && !isDragging) {
+                cameraRotation.theta += 0.005;
+                updateCameraPosition();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
