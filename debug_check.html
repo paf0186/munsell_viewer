@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Check - Three.js Loading</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        #status { font-size: 16px; margin-bottom: 20px; }
+        .error { color: #ff0000; }
+        .success { color: #00ff00; }
+    </style>
+</head>
+<body>
+    <h2>Three.js Loading Debug</h2>
+    <div id="status">Checking...</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+    <script>
+        const statusEl = document.getElementById('status');
+
+        setTimeout(() => {
+            if (typeof THREE !== 'undefined') {
+                statusEl.innerHTML = '<div class="success">✓ THREE.js loaded successfully!</div>';
+                statusEl.innerHTML += '<div class="success">✓ Version: ' + THREE.REVISION + '</div>';
+                statusEl.innerHTML += '<div class="success">✓ Scene, Camera, Renderer available</div>';
+                statusEl.innerHTML += '<div class="success">The visualizer should work. Opening console for more details...</div>';
+                console.log('THREE object:', THREE);
+            } else {
+                statusEl.innerHTML = '<div class="error">✗ THREE.js FAILED to load</div>';
+                statusEl.innerHTML += '<div class="error">This is likely due to:</div>';
+                statusEl.innerHTML += '<div class="error">1. No internet connection</div>';
+                statusEl.innerHTML += '<div class="error">2. CDN is blocked</div>';
+                statusEl.innerHTML += '<div class="error">3. Browser security settings</div>';
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Munsell Color Space 3D Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 18px;
+            z-index: 1000;
+        }
+
+        #error {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            z-index: 1000;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #info h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #info p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #cccccc;
+            margin-bottom: 8px;
+        }
+
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 250px;
+        }
+
+        #controls h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #ffffff;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            color: #aaaaaa;
+            margin-bottom: 5px;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .control-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .control-group .value-display {
+            font-size: 11px;
+            color: #888888;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #aaaaaa;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ffffff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        <div>Loading Three.js and initializing visualization...</div>
+    </div>
+
+    <div id="error">
+        <h2>Error Loading Visualization</h2>
+        <p id="errorMessage"></p>
+        <p style="margin-top: 15px; font-size: 12px;">Check browser console (F12) for details.</p>
+    </div>
+
+    <div id="container"></div>
+
+    <div id="info" style="display: none;">
+        <h1>Munsell Color Space</h1>
+        <p><strong>Structure:</strong></p>
+        <p>• <strong>Value</strong> (Z-axis): 0-10 lightness</p>
+        <p>• <strong>Hue</strong> (angle): R→Y→G→B→P</p>
+        <p>• <strong>Chroma</strong> (radius): 0-18+ saturation</p>
+        <p><strong>Notice the irregular shape!</strong> The boundary shows which colors humans can actually perceive. Yellow reaches higher chroma than blue, and purples are limited at high values.</p>
+    </div>
+
+    <div id="controls" style="display: none;">
+        <h3>Controls</h3>
+
+        <div class="control-group">
+            <label>Point Size</label>
+            <input type="range" id="pointSize" min="1" max="10" value="4" step="0.5">
+            <div class="value-display">Current: <span id="pointSizeValue">4</span></div>
+        </div>
+
+        <div class="control-group">
+            <label>Point Density</label>
+            <input type="range" id="density" min="1" max="3" value="2" step="1">
+            <div class="value-display">Current: <span id="densityValue">Medium</span></div>
+        </div>
+
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="showAxes" checked>
+                Show Axes
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="showBoundary" checked>
+                Show Boundary Mesh
+            </label>
+        </div>
+
+        <button id="resetCamera">Reset View</button>
+        <button id="toggleRotation">Auto Rotate</button>
+    </div>
+
+    <div id="status" style="display: none;">
+        Points: <span id="pointCount">0</span> | Camera: <span id="cameraInfo">Ready</span>
+    </div>
+
+    <!-- Try multiple CDN sources -->
+    <script>
+        // Error handling
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e);
+            showError('JavaScript error: ' + e.message);
+        });
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('info').style.display = 'block';
+            document.getElementById('controls').style.display = 'block';
+            document.getElementById('status').style.display = 'block';
+        }
+
+        // Load Three.js from CDN
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js';
+        script.onload = function() {
+            console.log('Three.js loaded successfully!');
+            if (typeof THREE === 'undefined') {
+                showError('THREE.js loaded but not available. Check browser console.');
+                return;
+            }
+            // Initialize the app after Three.js loads
+            setTimeout(initApp, 100);
+        };
+        script.onerror = function() {
+            console.error('Failed to load Three.js from CDN');
+            showError('Failed to load Three.js library. Check internet connection or try a different browser.');
+        };
+        document.head.appendChild(script);
+
+        function initApp() {
+            try {
+                console.log('Initializing Munsell Visualizer...');
+                console.log('THREE.REVISION:', THREE.REVISION);
+
+                // ===== MUNSELL COLOR SPACE DATA AND CONVERSION =====
+
+                const MUNSELL_HUES = [
+                    { name: '5R', angle: 0, color: '#FF0000' },
+                    { name: '5YR', angle: 36, color: '#FF6600' },
+                    { name: '5Y', angle: 72, color: '#FFFF00' },
+                    { name: '5GY', angle: 108, color: '#99FF00' },
+                    { name: '5G', angle: 144, color: '#00FF00' },
+                    { name: '5BG', angle: 180, color: '#00FFAA' },
+                    { name: '5B', angle: 216, color: '#0088FF' },
+                    { name: '5PB', angle: 252, color: '#0000FF' },
+                    { name: '5P', angle: 288, color: '#8800FF' },
+                    { name: '5RP', angle: 324, color: '#FF00AA' }
+                ];
+
+                function getMaxChroma(hueAngle, value) {
+                    const h = ((hueAngle % 360) + 360) % 360;
+                    let baseChroma;
+
+                    if (h >= 60 && h < 100) {
+                        baseChroma = 16;
+                    } else if ((h >= 20 && h < 60) || (h >= 100 && h < 130)) {
+                        baseChroma = 14;
+                    } else if (h < 20 || h >= 340) {
+                        baseChroma = 14;
+                    } else if (h >= 130 && h < 180) {
+                        baseChroma = 12;
+                    } else if (h >= 180 && h < 230) {
+                        baseChroma = 10;
+                    } else if (h >= 230 && h < 260) {
+                        baseChroma = 9;
+                    } else if (h >= 260 && h < 300) {
+                        baseChroma = 10;
+                    } else {
+                        baseChroma = 12;
+                    }
+
+                    let valueFactor;
+                    if (value <= 1) valueFactor = 0.3;
+                    else if (value <= 2) valueFactor = 0.5;
+                    else if (value <= 3) valueFactor = 0.75;
+                    else if (value <= 5) valueFactor = 0.95;
+                    else if (value <= 6) valueFactor = 1.0;
+                    else if (value <= 7) valueFactor = 0.9;
+                    else if (value <= 8) valueFactor = (h >= 230 && h < 300) ? 0.5 : 0.7;
+                    else if (value <= 9) valueFactor = (h >= 230 && h < 300) ? 0.25 : 0.4;
+                    else valueFactor = 0.2;
+
+                    return baseChroma * valueFactor;
+                }
+
+                function munsellToXYZ(hue, value, chroma) {
+                    const L = value * 10;
+                    const hueRadians = (hue * Math.PI) / 180;
+                    const a = chroma * 5 * Math.cos(hueRadians);
+                    const b = chroma * 5 * Math.sin(hueRadians);
+
+                    const fy = (L + 16) / 116;
+                    const fx = fy + (a / 500);
+                    const fz = fy - (b / 200);
+
+                    const xr = fx > 0.206897 ? fx ** 3 : (fx - 16/116) / 7.787;
+                    const yr = fy > 0.206897 ? fy ** 3 : (fy - 16/116) / 7.787;
+                    const zr = fz > 0.206897 ? fz ** 3 : (fz - 16/116) / 7.787;
+
+                    return {
+                        X: xr * 0.95047,
+                        Y: yr * 1.00000,
+                        Z: zr * 1.08883
+                    };
+                }
+
+                function XYZToLinearRGB(X, Y, Z) {
+                    return {
+                        r:  3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z,
+                        g: -0.9692660 * X + 1.8760108 * Y + 0.0415560 * Z,
+                        b:  0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z
+                    };
+                }
+
+                function linearToSRGB(linear) {
+                    return linear <= 0.0031308 ? 12.92 * linear : 1.055 * Math.pow(linear, 1/2.4) - 0.055;
+                }
+
+                function munsellToRGB(hue, value, chroma) {
+                    const xyz = munsellToXYZ(hue, value, chroma);
+                    const linear = XYZToLinearRGB(xyz.X, xyz.Y, xyz.Z);
+
+                    return {
+                        r: Math.max(0, Math.min(1, linearToSRGB(linear.r))),
+                        g: Math.max(0, Math.min(1, linearToSRGB(linear.g))),
+                        b: Math.max(0, Math.min(1, linearToSRGB(linear.b)))
+                    };
+                }
+
+                // ===== THREE.JS SCENE SETUP =====
+
+                let scene, camera, renderer;
+                let pointCloud, axes, boundaryMesh;
+                let autoRotate = false;
+                let isDragging = false;
+                let previousMousePosition = { x: 0, y: 0 };
+                let cameraRotation = { theta: Math.PI / 4, phi: Math.PI / 4 };
+                let cameraDistance = 30;
+
+                function init() {
+                    console.log('Creating scene...');
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x1a1a1a);
+
+                    console.log('Creating camera...');
+                    camera = new THREE.PerspectiveCamera(
+                        60,
+                        window.innerWidth / window.innerHeight,
+                        0.1,
+                        1000
+                    );
+                    updateCameraPosition();
+
+                    console.log('Creating renderer...');
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('container').appendChild(renderer.domElement);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const light = new THREE.DirectionalLight(0xffffff, 0.4);
+                    light.position.set(10, 10, 5);
+                    scene.add(light);
+
+                    console.log('Creating Munsell space...');
+                    createMunsellSpace(2);
+                    createAxes();
+
+                    setupControls();
+                    setupEventListeners();
+
+                    hideLoading();
+                    console.log('Initialization complete!');
+
+                    animate();
+                }
+
+                function createMunsellSpace(density = 2) {
+                    if (pointCloud) {
+                        scene.remove(pointCloud);
+                        pointCloud.geometry.dispose();
+                        pointCloud.material.dispose();
+                    }
+
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = [];
+                    const colors = [];
+
+                    const valueStep = density === 1 ? 2 : (density === 2 ? 1 : 0.5);
+                    const hueStep = density === 1 ? 36 : (density === 2 ? 18 : 9);
+                    const chromaStep = density === 1 ? 2 : (density === 2 ? 1 : 0.5);
+
+                    let pointCount = 0;
+
+                    for (let value = 0; value <= 10; value += valueStep) {
+                        for (let hueAngle = 0; hueAngle < 360; hueAngle += hueStep) {
+                            const maxChroma = getMaxChroma(hueAngle, value);
+                            for (let chroma = 0; chroma <= maxChroma; chroma += chromaStep) {
+                                const hueRadians = (hueAngle * Math.PI) / 180;
+                                const x = chroma * Math.cos(hueRadians);
+                                const y = value;
+                                const z = chroma * Math.sin(hueRadians);
+
+                                positions.push(x, y, z);
+
+                                const rgb = munsellToRGB(hueAngle, value, chroma);
+                                colors.push(rgb.r, rgb.g, rgb.b);
+                                pointCount++;
+                            }
+                        }
+                    }
+
+                    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+                    const material = new THREE.PointsMaterial({
+                        size: 0.4,
+                        vertexColors: true,
+                        sizeAttenuation: true,
+                        transparent: true,
+                        opacity: 0.9,
+                        blending: THREE.AdditiveBlending
+                    });
+
+                    pointCloud = new THREE.Points(geometry, material);
+                    scene.add(pointCloud);
+
+                    document.getElementById('pointCount').textContent = pointCount.toLocaleString();
+                    console.log('Created', pointCount, 'points');
+
+                    createBoundaryMesh();
+                }
+
+                function createBoundaryMesh() {
+                    if (boundaryMesh) {
+                        scene.remove(boundaryMesh);
+                        boundaryMesh.geometry.dispose();
+                        boundaryMesh.material.dispose();
+                    }
+
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = [];
+                    const colors = [];
+                    const indices = [];
+
+                    const valueStep = 1;
+                    const hueStep = 18;
+                    let vertexIndex = 0;
+                    const vertexMap = new Map();
+
+                    for (let value = 0; value <= 10; value += valueStep) {
+                        const vertices = [];
+                        for (let hueAngle = 0; hueAngle <= 360; hueAngle += hueStep) {
+                            const maxChroma = getMaxChroma(hueAngle, value);
+                            const hueRadians = (hueAngle * Math.PI) / 180;
+
+                            const x = maxChroma * Math.cos(hueRadians);
+                            const y = value;
+                            const z = maxChroma * Math.sin(hueRadians);
+
+                            positions.push(x, y, z);
+
+                            const rgb = munsellToRGB(hueAngle, value, maxChroma);
+                            colors.push(rgb.r, rgb.g, rgb.b);
+
+                            vertices.push(vertexIndex);
+                            vertexIndex++;
+                        }
+                        vertexMap.set(value, vertices);
+                    }
+
+                    const values = Array.from(vertexMap.keys()).sort((a, b) => a - b);
+                    for (let i = 0; i < values.length - 1; i++) {
+                        const currentLevel = vertexMap.get(values[i]);
+                        const nextLevel = vertexMap.get(values[i + 1]);
+
+                        for (let j = 0; j < currentLevel.length - 1; j++) {
+                            const a = currentLevel[j];
+                            const b = currentLevel[j + 1];
+                            const c = nextLevel[j];
+                            const d = nextLevel[j + 1];
+
+                            indices.push(a, c, b);
+                            indices.push(b, c, d);
+                        }
+                    }
+
+                    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+                    geometry.setIndex(indices);
+                    geometry.computeVertexNormals();
+
+                    const material = new THREE.MeshPhongMaterial({
+                        vertexColors: true,
+                        transparent: true,
+                        opacity: 0.3,
+                        side: THREE.DoubleSide,
+                        shininess: 30
+                    });
+
+                    boundaryMesh = new THREE.Mesh(geometry, material);
+                    scene.add(boundaryMesh);
+                }
+
+                function createAxes() {
+                    axes = new THREE.Group();
+
+                    // Value axis
+                    const axisGeom = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(0, 0, 0),
+                        new THREE.Vector3(0, 12, 0)
+                    ]);
+                    axes.add(new THREE.Line(axisGeom, new THREE.LineBasicMaterial({ color: 0xffffff })));
+
+                    // Value markers
+                    for (let v = 0; v <= 10; v += 2) {
+                        const marker = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.15, 8, 8),
+                            new THREE.MeshBasicMaterial({ color: 0xffffff })
+                        );
+                        marker.position.set(0, v, 0);
+                        axes.add(marker);
+                    }
+
+                    // Hue circles
+                    [5, 10, 15].forEach(radius => {
+                        const curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, 2 * Math.PI);
+                        const points = curve.getPoints(50);
+                        const geom = new THREE.BufferGeometry().setFromPoints(points);
+                        const circle = new THREE.Line(geom, new THREE.LineBasicMaterial({
+                            color: 0x444444,
+                            transparent: true,
+                            opacity: 0.3
+                        }));
+                        circle.rotation.x = Math.PI / 2;
+                        axes.add(circle);
+                    });
+
+                    // Hue directions
+                    MUNSELL_HUES.forEach(hue => {
+                        const angle = (hue.angle * Math.PI) / 180;
+                        const radius = 18;
+                        const geom = new THREE.BufferGeometry().setFromPoints([
+                            new THREE.Vector3(0, 0, 0),
+                            new THREE.Vector3(radius * Math.cos(angle), 0, radius * Math.sin(angle))
+                        ]);
+                        axes.add(new THREE.Line(geom, new THREE.LineBasicMaterial({
+                            color: hue.color,
+                            transparent: true,
+                            opacity: 0.4
+                        })));
+                    });
+
+                    scene.add(axes);
+                }
+
+                function setupControls() {
+                    const container = renderer.domElement;
+
+                    container.addEventListener('mousedown', (e) => {
+                        isDragging = true;
+                        previousMousePosition = { x: e.clientX, y: e.clientY };
+                    });
+
+                    container.addEventListener('mousemove', (e) => {
+                        if (isDragging) {
+                            const deltaX = e.clientX - previousMousePosition.x;
+                            const deltaY = e.clientY - previousMousePosition.y;
+
+                            cameraRotation.theta -= deltaX * 0.01;
+                            cameraRotation.phi = Math.max(0.1, Math.min(Math.PI - 0.1,
+                                                           cameraRotation.phi + deltaY * 0.01));
+
+                            updateCameraPosition();
+                            previousMousePosition = { x: e.clientX, y: e.clientY };
+                        }
+                    });
+
+                    container.addEventListener('mouseup', () => { isDragging = false; });
+
+                    container.addEventListener('wheel', (e) => {
+                        e.preventDefault();
+                        cameraDistance = Math.max(10, Math.min(60, cameraDistance + e.deltaY * 0.05));
+                        updateCameraPosition();
+                    });
+                }
+
+                function updateCameraPosition() {
+                    const x = cameraDistance * Math.sin(cameraRotation.phi) * Math.cos(cameraRotation.theta);
+                    const y = cameraDistance * Math.cos(cameraRotation.phi) + 5;
+                    const z = cameraDistance * Math.sin(cameraRotation.phi) * Math.sin(cameraRotation.theta);
+
+                    camera.position.set(x, y, z);
+                    camera.lookAt(0, 5, 0);
+                }
+
+                function setupEventListeners() {
+                    document.getElementById('pointSize').addEventListener('input', (e) => {
+                        const size = parseFloat(e.target.value);
+                        if (pointCloud) pointCloud.material.size = size * 0.1;
+                        document.getElementById('pointSizeValue').textContent = size;
+                    });
+
+                    document.getElementById('density').addEventListener('input', (e) => {
+                        const density = parseInt(e.target.value);
+                        const labels = ['Low', 'Medium', 'High'];
+                        document.getElementById('densityValue').textContent = labels[density - 1];
+                        createMunsellSpace(density);
+                    });
+
+                    document.getElementById('showAxes').addEventListener('change', (e) => {
+                        if (axes) axes.visible = e.target.checked;
+                    });
+
+                    document.getElementById('showBoundary').addEventListener('change', (e) => {
+                        if (boundaryMesh) boundaryMesh.visible = e.target.checked;
+                    });
+
+                    document.getElementById('resetCamera').addEventListener('click', () => {
+                        cameraRotation = { theta: Math.PI / 4, phi: Math.PI / 4 };
+                        cameraDistance = 30;
+                        updateCameraPosition();
+                    });
+
+                    document.getElementById('toggleRotation').addEventListener('click', (e) => {
+                        autoRotate = !autoRotate;
+                        e.target.textContent = autoRotate ? 'Stop Rotation' : 'Auto Rotate';
+                    });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                }
+
+                function animate() {
+                    requestAnimationFrame(animate);
+
+                    if (autoRotate && !isDragging) {
+                        cameraRotation.theta += 0.005;
+                        updateCameraPosition();
+                    }
+
+                    renderer.render(scene, camera);
+                }
+
+                // Start!
+                init();
+
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                showError('Initialization error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
